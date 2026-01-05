@@ -149,8 +149,8 @@ Check if the vault is healthy
 
 ```bash
 # Clone the repository
-git clone https://github.com/zincware/zn-vault.git
-cd zn-vault/zn-vault-mcp-server
+git clone https://github.com/vidaldiego/zn-vault-mcp-server.git
+cd zn-vault-mcp-server
 
 # Install dependencies
 npm install
@@ -163,6 +163,47 @@ ZNVAULT_URL=https://localhost:8443 \
 ZNVAULT_API_KEY=your_key \
 ZNVAULT_INSECURE=true \
 node dist/index.js
+```
+
+## Releasing
+
+Releases are automated via GitHub Actions with npm OIDC trusted publishing (no tokens needed).
+
+### Setup (one-time)
+
+1. **npm Trusted Publisher** must be configured at npmjs.com:
+   - Package Settings → Trusted Publishers
+   - Repository: `vidaldiego/zn-vault-mcp-server`
+   - Workflow: `publish.yml`
+
+2. **GitHub Actions workflow** (`.github/workflows/publish.yml`) requires:
+   - `id-token: write` permission for OIDC
+   - `npm install -g npm@latest` to ensure OIDC support
+   - Trigger on tag push (`push: tags: - 'v*'`)
+
+### Publishing a new version
+
+```bash
+# Bump version (creates commit)
+npm version patch   # 1.0.5 → 1.0.6
+# or: npm version minor  # 1.0.5 → 1.1.0
+# or: npm version major  # 1.0.5 → 2.0.0
+
+# Push commit and tag (triggers publish)
+git push && git push --tags
+```
+
+The workflow will automatically:
+1. Install dependencies
+2. Run typecheck
+3. Build
+4. Publish to npm with provenance attestation
+
+### Manual publish (if needed)
+
+```bash
+npm login
+npm publish --access public --provenance
 ```
 
 ## Debugging
