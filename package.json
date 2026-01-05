@@ -34,9 +34,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/zincware/zn-vault.git",
-    "directory": "zn-vault-mcp-server"
+    "url": "git+https://github.com/vidaldiego/zn-vault-mcp-server.git"
   },
+  "bugs": {
+    "url": "https://github.com/vidaldiego/zn-vault-mcp-server/issues"
+  },
+  "homepage": "https://github.com/vidaldiego/zn-vault-mcp-server#readme",
   "engines": {
     "node": ">=18.0.0"
   },
