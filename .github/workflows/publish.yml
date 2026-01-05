@@ -12,8 +12,6 @@ jobs:
       id-token: write  # Required for npm OIDC trusted publishing
     steps:
       - uses: actions/checkout@v4
-        with:
-          repository: vidaldiego/zn-vault-mcp-server
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -30,8 +28,5 @@ jobs:
       - name: Build
         run: npm run build
 
-      # OIDC authentication - no token needed
       - name: Publish to npm
-        run: npm publish --access public
-        env:
-          NPM_CONFIG_PROVENANCE: true
+        run: npm publish --provenance --access public
