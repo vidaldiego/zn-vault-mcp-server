@@ -45,7 +45,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.5.0",
-    "@zincapp/znvault-sdk": "^1.5.3",
+    "@zincapp/znvault-sdk": "^4.3.0",
     "zod": "^3.25.0"
   },
   "devDependencies": {
