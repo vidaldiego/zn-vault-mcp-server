@@ -16,10 +16,11 @@ async function listToolNames(config: Parameters<typeof createServer>[0]): Promis
   return tools.map((t) => t.name).sort();
 }
 
-// Task 3 adds get_secret_fields + can_decrypt to this list
 const SAFE_TOOLS = [
+  "can_decrypt",
   "check_llm_status",
   "get_secret",
+  "get_secret_fields",
   "health_check",
   "list_secrets",
   "list_security_rules",

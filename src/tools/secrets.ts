@@ -65,6 +65,69 @@ export function registerSecretTools(
     }
   );
 
+  // Shared alias-or-id resolution (same idiom as get_secret)
+  async function resolveSecretRef(name: string): Promise<{ id: string; alias: string }> {
+    try {
+      const s = await client.secrets.getByAlias(name);
+      return { id: s.id, alias: s.alias };
+    } catch {
+      const s = await client.secrets.get(name);
+      return { id: s.id, alias: s.alias };
+    }
+  }
+
+  // Tool: get_secret_fields - field NAMES only, never values
+  server.tool(
+    "get_secret_fields",
+    "List a secret's field (key) names by alias or ID. Returns ONLY key names — never values. Safe for AI use: values are not exposed through this tool in any mode.",
+    {
+      name: z.string().min(1).describe("Secret alias (e.g., 'api/production/db') or UUID"),
+    },
+    async ({ name }) => {
+      try {
+        const ref = await resolveSecretRef(name);
+        const { fields } = await client.secrets.getFields(ref.id);
+        return {
+          content: [
+            { type: "text" as const, text: JSON.stringify({ alias: ref.alias, fields }, null, 2) },
+          ],
+        };
+      } catch (error) {
+        return {
+          content: [
+            { type: "text" as const, text: `Error: ${error instanceof Error ? error.message : String(error)}` },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // Tool: can_decrypt - decrypt-authorization preflight (self-check), never decrypts
+  server.tool(
+    "can_decrypt",
+    "Preflight whether the configured credential could decrypt a secret (including its reference graph), WITHOUT decrypting anything. Returns a verdict: allowed, denied, conditional, or indeterminate. A denied verdict is a normal result, not an error.",
+    {
+      name: z.string().min(1).describe("Secret alias (e.g., 'api/production/db') or UUID"),
+    },
+    async ({ name }) => {
+      try {
+        const ref = await resolveSecretRef(name);
+        const result = await client.secrets.canDecrypt(ref.id);
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+        };
+      } catch (error) {
+        return {
+          content: [
+            { type: "text" as const, text: `Error: ${error instanceof Error ? error.message : String(error)}` },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+
   // Tool: list_secrets - List secrets with filtering
   server.tool(
     "list_secrets",
@@ -93,13 +156,23 @@ export function registerSecretTools(
     },
     async ({ type, aliasPrefix, tags, page, pageSize }) => {
       try {
+        // The SDK's SecretFilter/PaginatedResponse (v4.x) use limit/offset and a
+        // nested `pagination` object rather than page/pageSize/total/totalPages.
+        // Translate here so the tool's page/pageSize input surface stays stable.
+        // Note: `tags` filtering is not supported server-side (the SDK itself
+        // ignores it in list()), so it is accepted but not forwarded.
+        void tags;
+        const offset = (page - 1) * pageSize;
         const result = await client.secrets.list({
           type,
           aliasPrefix,
-          tags,
-          page,
-          pageSize,
+          limit: pageSize,
+          offset,
         });
+
+        const { total, limit, offset: resultOffset } = result.pagination;
+        const totalPages = limit > 0 ? Math.ceil(total / limit) : 0;
+        const currentPage = limit > 0 ? Math.floor(resultOffset / limit) + 1 : page;
 
         return {
           content: [
@@ -107,10 +180,10 @@ export function registerSecretTools(
               type: "text" as const,
               text: JSON.stringify(
                 {
-                  total: result.total,
-                  page: result.page,
-                  pageSize: result.pageSize,
-                  totalPages: result.totalPages,
+                  total,
+                  page: currentPage,
+                  pageSize: limit,
+                  totalPages,
                   secrets: result.items.map((s) => ({
                     id: s.id,
                     alias: s.alias,
