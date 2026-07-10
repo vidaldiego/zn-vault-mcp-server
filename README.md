@@ -31,10 +31,12 @@ npx @zincapp/znvault-mcp-server
 | `get_secret_fields` | List a secret's field (key) names only — never values, in any mode |
 | `can_decrypt` | Preflight whether the configured credential *could* decrypt a secret (incl. its reference graph), without decrypting anything. Returns a verdict — `allowed`/`denied`/`conditional`/`indeterminate`. A `denied` verdict is a normal result, not an error |
 | `health_check` | Check vault server health and connectivity |
-| `run_security_audit` | Run a security advisor audit for a tenant; findings + recommendations, optional AI summary |
-| `list_security_rules` | List the security rules the advisor checks against |
-| `suggest_secret_config` | Get AI-powered suggestions for naming/configuring a *new* secret (no existing values involved) |
+| `run_security_audit` \* | Run a security advisor audit for a tenant; findings + recommendations, optional AI summary |
+| `list_security_rules` \* | List the security rules the advisor checks against |
+| `suggest_secret_config` \* | Get AI-powered suggestions for naming/configuring a *new* secret (no existing values involved) |
 | `check_llm_status` | Check whether AI/LLM features are configured for the advisor |
+
+\* Requires extra API-key permissions beyond the minimal metadata-only key — see [Optional: advisor tools](#scoped-key-setup-recommended-for-ai-safe-mode) under scoped-key setup.
 
 ### Value tools (opt-in)
 
@@ -58,6 +60,15 @@ znvault apikey create ai-assistant \
 ```
 
 > Verified against `znvault apikey create --help`: the key name is a **positional** argument (not `--name`), and permissions are passed via `-p`/`--permissions` as a comma-separated list.
+
+**Optional: advisor tools.** The minimal key above covers the four secrets tools and `health_check`. The advisor tools `run_security_audit` and `list_security_rules` additionally require `tenant:read`:
+
+```bash
+znvault apikey create ai-assistant \
+  --permissions secret:read:metadata,secret:list:metadata,tenant:read
+```
+
+`suggest_secret_config` additionally needs `secret:create` — granting create weakens the read-only posture, so leave it out unless you actually use that tool.
 
 **Do not** grant `secret:read:value` (or any value-decrypt permission) to keys used with this MCP server in AI-safe mode. Keeping the key metadata-only gives you the second enforcement layer described above — even if `ZNVAULT_ALLOW_VALUES` were accidentally set, a metadata-only key still can't decrypt.
 
