@@ -5,15 +5,17 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { createServer } from "./server.js";
 
 /**
- * ZN-Vault MCP Server
+ * ZnVault MCP Server
  *
  * Enables AI assistants (Claude, Cursor, etc.) to securely access
- * secrets from ZN-Vault via the Model Context Protocol.
+ * secrets from ZnVault via the Model Context Protocol.
  *
  * Environment variables:
  * - ZNVAULT_URL: Vault server URL (required)
  * - ZNVAULT_API_KEY: API key for authentication (required)
  * - ZNVAULT_INSECURE: Set to "true" to skip TLS verification (optional)
+ * - ZNVAULT_ALLOW_VALUES: Set to "true" to register value-exposing tools
+ *   (decrypt_secret, create_secret). Default: AI-safe mode — metadata only.
  */
 
 async function main(): Promise<void> {
@@ -32,19 +34,23 @@ async function main(): Promise<void> {
   }
 
   const insecure = process.env.ZNVAULT_INSECURE === "true";
+  const allowValues = process.env.ZNVAULT_ALLOW_VALUES === "true";
 
   // Create and connect MCP server
   const server = createServer({
     url,
     apiKey,
     insecure,
+    allowValues,
   });
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
 
   // Log to stderr (stdout is reserved for MCP protocol)
-  console.error(`ZN-Vault MCP server connected to ${url}`);
+  console.error(
+    `ZnVault MCP server connected to ${url} (${allowValues ? "VALUES ENABLED" : "AI-safe mode: metadata only"})`
+  );
 }
 
 main().catch((error) => {

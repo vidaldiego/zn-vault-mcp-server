@@ -1,7 +1,7 @@
 {
   "name": "@zincapp/znvault-mcp-server",
-  "version": "1.0.5",
-  "description": "MCP server for ZN-Vault secrets management - enables AI assistants to securely access secrets",
+  "version": "2.0.0",
+  "description": "MCP server for ZnVault secrets management - enables AI assistants to securely access secrets",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

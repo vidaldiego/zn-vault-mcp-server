@@ -12,10 +12,16 @@ export interface VaultConfig {
   apiKey: string;
   /** Skip TLS certificate verification */
   insecure?: boolean;
+  /**
+   * Register value-exposing tools (decrypt_secret, create_secret).
+   * Default false: AI-safe mode — the AI can see names, fields and metadata,
+   * never values. Enforce additionally with a metadata-only API key.
+   */
+  allowValues?: boolean;
 }
 
 /**
- * Creates a configured ZN-Vault client instance.
+ * Creates a configured ZnVault client instance.
  */
 export function createClient(config: VaultConfig): ZnVaultClient {
   return ZnVaultClient.builder()

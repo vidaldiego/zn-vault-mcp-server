@@ -65,49 +65,6 @@ export function registerSecretTools(
     }
   );
 
-  // Tool: decrypt_secret - Decrypt and retrieve secret data
-  server.tool(
-    "decrypt_secret",
-    "Decrypt and retrieve the actual secret data. This is a sensitive operation that will be logged in the audit trail.",
-    {
-      id: z.string().min(1).describe("Secret ID (UUID)"),
-    },
-    async ({ id }) => {
-      try {
-        const secret = await client.secrets.decrypt(id);
-
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                {
-                  id: secret.id,
-                  alias: secret.alias,
-                  type: secret.type,
-                  version: secret.version,
-                  data: secret.data,
-                },
-                null,
-                2
-              ),
-            },
-          ],
-        };
-      } catch (error) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Error: ${error instanceof Error ? error.message : String(error)}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    }
-  );
-
   // Tool: list_secrets - List secrets with filtering
   server.tool(
     "list_secrets",
@@ -163,6 +120,59 @@ export function registerSecretTools(
                     tags: s.tags,
                     expiresAt: s.expiresAt,
                   })),
+                },
+                null,
+                2
+              ),
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
+  );
+}
+
+/**
+ * Value-exposing tools — only registered with ZNVAULT_ALLOW_VALUES=true.
+ * In AI-safe mode (default) these are never registered, so MCP clients
+ * cannot see or call them.
+ */
+export function registerSecretValueTools(
+  server: McpServer,
+  client: ZnVaultClient
+): void {
+  // Tool: decrypt_secret - Decrypt and retrieve secret data
+  server.tool(
+    "decrypt_secret",
+    "Decrypt and retrieve the actual secret data. This is a sensitive operation that will be logged in the audit trail.",
+    {
+      id: z.string().min(1).describe("Secret ID (UUID)"),
+    },
+    async ({ id }) => {
+      try {
+        const secret = await client.secrets.decrypt(id);
+
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(
+                {
+                  id: secret.id,
+                  alias: secret.alias,
+                  type: secret.type,
+                  version: secret.version,
+                  data: secret.data,
                 },
                 null,
                 2
